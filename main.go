@@ -21,7 +21,6 @@ func main() {
 
     log.Println("Non-flag arguments:", flag.Args())
 
-    
     // Debug stuff
     if *permissive {
         log.Println("Permissive")
@@ -29,9 +28,8 @@ func main() {
         log.Println("Not permissive")
     }
 
-    // Set the file to the first parameter
-    // if specified, and if it's not a glob pattern. Else,
-    // set to index.html
+    // Set the file to the first parameter if specified, and if it's not a
+    // glob pattern. Else, set to index.html
     var file string
     if flag.Arg(0) == "" {
         file = "index.html"
@@ -71,38 +69,34 @@ func main() {
 
     // Search for files using a glob pattern
     // and then make handlers for every file found
+    var files []string
     for _, descriptor := range deDuplicate(flag.Args()) {
-        // FIXME: If the program is passed "<filename> *" then it will expand
-        // the `*` to a list of files that won't be deduplicated
-        // FIX: expand flag.Args() into a list of files from globs, then loop over those
-
         // TODO: Test program and see what Glob does to arguments
         // like "file name" with spaces
-        files, err := filepath.Glob(descriptor)
+        fs, err := filepath.Glob(descriptor)
         if err != nil {
             log.Printf("Error reading glob: %v\n", err)
             continue
         }
-        if files == nil {
-            log.Println("No files described by", descriptor)
+        files = append(files, fs...)
+    }
+    log.Printf("Files: %v\n", files)
+    log.Printf("Files: %v\n", deDuplicate(files))
+
+    for _, f := range deDuplicate(files) {
+        fileInfo, err := os.Stat(f)
+        if err != nil {
+            log.Println("Error getting file info:", err)
             continue
         }
 
-        for _, f := range files {
-            fileInfo, err := os.Stat(f)
-            if err != nil {
-                log.Println("Error getting file info:", err)
-                continue
-            }
-
-            if !fileInfo.IsDir() {
-                http.HandleFunc(
-                    fmt.Sprintf("/%s", f),
-                    generateHandler(f),
-                )
-            } else {
-                log.Println(f, "is a directory, not creating handler")
-            }
+        if !fileInfo.IsDir() {
+            http.HandleFunc(
+                fmt.Sprintf("/%s", f),
+                generateHandler(f),
+            )
+        } else {
+            log.Println(f, "is a directory, not creating handler")
         }
     }
 
@@ -119,7 +113,7 @@ func main() {
     http.ListenAndServe(portString, nil)
 }
 
-// generateHandler generates a basic http.HandleFunc given a file name (e.g. path/to/index.html)
+// generateHandler generates a basic http.HandleFunc given a file name (e.g. path/to/index.html).
 // Will use the file's name to look for a template, and will execute that template
 // without passing it any data
 func generateHandler(file string) http.HandlerFunc {
