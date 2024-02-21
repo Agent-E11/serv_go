@@ -5,6 +5,7 @@ import (
     "fmt"
     "log"
     "net/http"
+    "os"
     "path/filepath"
     "strings"
     "text/template"
@@ -84,10 +85,21 @@ func main() {
 
         for _, f := range files {
             // TODO: Only make handler if file is not a directory
-            http.HandleFunc(
-                fmt.Sprintf("/%s", f),
-                generateHandler(f),
-            )
+
+            fileInfo, err := os.Stat(f)
+            if err != nil {
+                log.Println("Error getting file info:", err)
+                continue
+            }
+
+            if !fileInfo.IsDir() {
+                http.HandleFunc(
+                    fmt.Sprintf("/%s", f),
+                    generateHandler(f),
+                )
+            } else {
+                log.Println(f, "is a directory, not creating handler")
+            }
         }
     }
 
