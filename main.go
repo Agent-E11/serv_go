@@ -71,8 +71,13 @@ func main() {
 
     // Search for files using a glob pattern
     // and then make handlers for every file found
-    for _, descriptor := range flag.Args() {
+    for _, descriptor := range deDuplicate(flag.Args()) {
+        // FIXME: If the program is passed "<filename> *" then it will expand
+        // the `*` to a list of files that won't be deduplicated
+        // FIX: expand flag.Args() into a list of files from globs, then loop over those
 
+        // TODO: Test program and see what Glob does to arguments
+        // like "file name" with spaces
         files, err := filepath.Glob(descriptor)
         if err != nil {
             log.Printf("Error reading glob: %v\n", err)
@@ -84,8 +89,6 @@ func main() {
         }
 
         for _, f := range files {
-            // TODO: Only make handler if file is not a directory
-
             fileInfo, err := os.Stat(f)
             if err != nil {
                 log.Println("Error getting file info:", err)
@@ -134,4 +137,17 @@ func generateHandler(file string) http.HandlerFunc {
             log.Printf("Error executing template: %v\n", err)
         }
     }
+}
+
+// deDuplicate removes duplicate elements from a slice
+func deDuplicate[T comparable](sliceList []T) []T {
+    keys := make(map[T]bool)
+    list := []T{}
+    for _, item := range sliceList {
+        if _, value := keys[item]; !value {
+            keys[item] = true
+            list = append(list, item)
+        }
+    }
+    return list
 }
