@@ -2,7 +2,8 @@ package main
 
 import (
     "flag"
-    "fmt" // TODO: Change all debug `fmt`s prints to `log`
+    "fmt"
+    "log"
     "net/http"
     "path/filepath"
     "strings"
@@ -17,14 +18,14 @@ func main() {
     external := flag.Bool("ext", false, "whether it should listen on 0.0.0.0")
     flag.Parse()
 
-    fmt.Println("Non-flag arguments:", flag.Args())
+    log.Println("Non-flag arguments:", flag.Args())
 
     
     // Debug stuff
     if *permissive {
-        fmt.Println("Permissive")
+        log.Println("Permissive")
     } else {
-        fmt.Println("Not permissive")
+        log.Println("Not permissive")
     }
 
     // Set the file to the first parameter
@@ -40,30 +41,30 @@ func main() {
     } else {
         file = flag.Arg(0)
     }
-    fmt.Printf("The root file is `%s`\n", file)
+    log.Printf("The root file is `%s`\n", file)
 
     // Create the default route
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Println("Serving /")
-        fmt.Printf("Value of r.URL.Path: %v\n", r.URL.Path)
+        log.Println("Serving /")
+        log.Printf("Value of r.URL.Path: %v\n", r.URL.Path)
 
         // If the path is not the root, return a 404
         if r.URL.Path != "/" {
-            fmt.Println("Before not found error")
+            log.Println("Before not found error")
             http.NotFound(w, r)
-            fmt.Println("After not found error")
+            log.Println("After not found error")
             return
         }
 
         tmpl, err := template.ParseFiles(file)
         if err != nil {
-            fmt.Printf("The file %s does not exist\n", file)
+            log.Printf("The file %s does not exist\n", file)
             return
         }
 
         err = tmpl.Execute(w, nil)
         if err != nil {
-            fmt.Printf("Error executing template: %v\n", err)
+            log.Printf("Error executing template: %v\n", err)
         }
     })
 
@@ -73,11 +74,11 @@ func main() {
 
         files, err := filepath.Glob(descriptor)
         if err != nil {
-            fmt.Printf("Error reading glob: %v\n", err)
+            log.Printf("Error reading glob: %v\n", err)
             continue
         }
         if files == nil {
-            fmt.Println("No files described by", descriptor)
+            log.Println("No files described by", descriptor)
             continue
         }
 
@@ -99,7 +100,7 @@ func main() {
     }
 
     // Listen for http requests
-    fmt.Println("Listening on port", portString)
+    log.Println("Listening on port", portString)
     http.ListenAndServe(portString, nil)
 }
 
@@ -107,18 +108,18 @@ func main() {
 // Will use the file's name to look for a template, and will execute that template
 // without passing it any data
 func generateHandler(file string) http.HandlerFunc {
-    fmt.Printf("Generating handler for %s\n", file)
+    log.Printf("Generating handler for %s\n", file)
     return func(w http.ResponseWriter, r *http.Request) {
-        fmt.Printf("Serving /%s\n", file)
+        log.Printf("Serving /%s\n", file)
         tmpl, err := template.ParseFiles(file)
         if err != nil {
-            fmt.Printf("The file %s does not exist\n", file)
+            log.Printf("The file %s does not exist\n", file)
             return
         }
 
         err = tmpl.Execute(w, nil)
         if err != nil {
-            fmt.Printf("Error executing template: %v\n", err)
+            log.Printf("Error executing template: %v\n", err)
         }
     }
 }
