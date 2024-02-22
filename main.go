@@ -110,7 +110,7 @@ func main() {
 
     // Listen for http requests
     log.Println("Listening on port", portString)
-    http.ListenAndServe(portString, nil)
+    log.Fatal(http.ListenAndServe(portString, nil))
 }
 
 // generateHandler generates a basic http.HandleFunc given a file name (e.g. path/to/index.html).
