@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
+    // TODO: Use the Var versions of these functions
     port := flag.Int("p", 8000, "port to listen on")
-    // TODO: When true, it should dynamically search for any url given to it
     permissive := flag.Bool("permissive", false, "whether it should allow routes to any file")
     // TODO: Might be unnecessary, because it seems to always listen externally
     external := flag.Bool("ext", false, "whether it should listen on 0.0.0.0")
@@ -47,32 +47,38 @@ func main() {
         log.Println("Serving /")
         log.Printf("Value of r.URL.Path: %v\n", r.URL.Path)
 
-        // If the path is not the root, return a 404
-        if r.URL.Path != "/" {
-            log.Println("Before not found error")
+        path := strings.TrimLeft(r.URL.Path, "/.")
+
+        if path == "" {
+            tmpl, err := template.ParseFiles(file)
+            if err != nil {
+                log.Printf("The file %s does not exist\n", file)
+                return
+            }
+
+            tmpl.Execute(w, nil)
+            return
+        } else if !*permissive {
+            log.Println("Not permissive, not attempting to find file:", path)
             http.NotFound(w, r)
-            log.Println("After not found error")
             return
         }
 
-        tmpl, err := template.ParseFiles(file)
+        tmpl, err := template.ParseFiles(path)
         if err != nil {
-            log.Printf("The file %s does not exist\n", file)
+            log.Println("Couldn't find file:", path)
+            log.Println("Error:", err)
+            http.NotFound(w, r)
             return
         }
-
-        err = tmpl.Execute(w, nil)
-        if err != nil {
-            log.Printf("Error executing template: %v\n", err)
-        }
+        log.Println("Serving dynamic file:", path)
+        tmpl.Execute(w, nil)
     })
 
     // Search for files using a glob pattern
     // and then make handlers for every file found
     var files []string
     for _, descriptor := range deDuplicate(flag.Args()) {
-        // TODO: Test program and see what Glob does to arguments
-        // like "file name" with spaces
         fs, err := filepath.Glob(descriptor)
         if err != nil {
             log.Printf("Error reading glob: %v\n", err)
