@@ -12,17 +12,19 @@ import (
 )
 
 func main() {
-    // TODO: Use the Var versions of these functions
-    port := flag.Int("p", 8000, "port to listen on")
-    permissive := flag.Bool("permissive", false, "whether it should allow routes to any file")
+    var port int
+    flag.IntVar(&port, "p", 8000, "port to listen on")
+    var permissive bool
+    flag.BoolVar(&permissive, "permissive", false, "whether it should allow routes to any file")
     // TODO: Might be unnecessary, because it seems to always listen externally
-    external := flag.Bool("ext", false, "whether it should listen on 0.0.0.0")
+    var external bool
+    flag.BoolVar(&external, "ext", false, "whether it should listen on 0.0.0.0")
     flag.Parse()
 
     log.Println("Non-flag arguments:", flag.Args())
 
     // Debug stuff
-    if *permissive {
+    if permissive {
         log.Println("Permissive")
     } else {
         log.Println("Not permissive")
@@ -58,7 +60,7 @@ func main() {
 
             tmpl.Execute(w, nil)
             return
-        } else if !*permissive {
+        } else if !permissive {
             log.Println("Not permissive, not attempting to find file:", path)
             http.NotFound(w, r)
             return
@@ -108,10 +110,10 @@ func main() {
 
     // Create portString
     var portString string
-    if *external {
-        portString = fmt.Sprintf("0.0.0.0:%d", *port)
+    if external {
+        portString = fmt.Sprintf("0.0.0.0:%d", port)
     } else {
-        portString = fmt.Sprintf(":%d", *port)
+        portString = fmt.Sprintf(":%d", port)
     }
 
     // Listen for http requests
